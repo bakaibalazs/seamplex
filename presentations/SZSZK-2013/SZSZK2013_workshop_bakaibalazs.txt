@@ -1,0 +1,90 @@
+
+
+
+WORKSHOP:
+
+Előkészületek:
+* OpenJDK telepítése	: sudo apt-get install openjdk-7-jdk
+* Apache Ant telepítése	: sudo apt-get install ant   
+* Jenkins letöltése	: http://mirrors.jenkins-ci.org/war/latest/jenkins.war
+* Sonar	letöltése	: http://dist.sonar.codehaus.org/sonar-3.5.1.zip
+* SonarRunner letöltése	: http://repo1.maven.org/maven2/org/codehaus/sonar/runner/sonar-runner-dist/2.2.1/sonar-runner-dist-2.2.1.zip
+* JMeter letöltése	: http://xenia.sote.hu/ftp/mirrors/www.apache.org//jmeter/binaries/apache-jmeter-2.9.tgz
+* Nyitott portok a lokális gépen: 8080, 9000 
+
+Telepítések:
+* mkdir /home/balazs/szszk2013
+* Sonar, SonarRunner, JMeter kicsomagolása a /home/balazs/szszk2013 könyvtár alá
+
+Sonar:
+* Sonar indítása: /home/balazs/szszk2013/sonar-3.5.1/bin/linux-x86-64/sonar.sh start
+* Jenkins webes felülete: http://localhost:9000/
+
+Jenkins:
+* jenkins.war bemásolása /home/balazs/szszk2013 könyvtár alá
+* JENKINS_HOME beállítása: export JENKINS_HOME=/home/balazs/szszk2013/jenkins
+* Jenkins indítása standalone módban: nohup java -jar jenkins.war &
+* Jenkins webes felülete: http://localhost:8080/
+
+* Új Jenkins job létrehozása és az ntorrent forráskódjának a letöltése: 
+	* Job name: ntorrent, New Job/Build a free-style software project/
+	* Discard Old Builds: 5
+	* Source Code Management: Subversion, Repository URL: http://ntorrent.googlecode.com/svn/trunk/
+	* Save
+	* Build Now
+	* Console -> Leszedi a forráskódot, ellenőrizni a filerendszerben
+
+* ntorrent job buildelés és build termékek archiválása
+	* Manage Jenkins/Configure System/Ant/Add Ant/install manually(pipa ki) :ANT_NAME=myant, ANT_HOME=/usr/share/ant, save	//dpkg -L ant
+	* ntorrent job/Configure/Add Build Step/Invoke Ant
+		*Ant version:myant,targets: dist, buildfile: build.xml
+	*ntorrent job/Configure/add post build action/Archive the artifact: release/nTorrent-bin-0.6.tar.bz2
+	
+* Sonar kódanalizálás bekötése
+	*Manage Jenkins/Manage Plugins/Available: Sonar plugin: Download now and install after restart, restart jenkins pipa be
+	*A feltelepített Sonar plugin ellenőrzése: Jenkins Sonar Plugin
+	*Jenkins/Manage Jenkins/Configure System/add Sonar Runner		
+		Name: MySonarRunner, SONAR_RUNNER_HOME:
+	*Jenkins/Manage Jenkins/Configure System/add Sonar
+		Name: MySonarServer		
+		Database URL: jdbc:h2:tcp://localhost:9092/sonar
+		Database login: sonar
+		Database password: sonar
+		Database driver:org.h2.Driver
+	*ntorrent/Configure/add Build Step/Invoke Standalone Sonar Analysis/projet properties:
+
+sonar.projectKey=ntorrent
+sonar.projectName=ntorrent
+sonar.projectVersion=1.0
+
+sonar.sources=plugins/ntorrent/source,plugins/ntorrent.connection.http/source,plugins/ntorrent.connection.socket/source,plugins/ntorrent.connection.ssh/source,plugins/ntorrent.io.rtorrent/source,plugins/ntorrent.locale/source,plugins/ntorrent.skins/source,plugins/ntorrent.statusbar.throttle/source,plugins/ntorrent.torrentfiles/source,plugins/ntorrent.torrentinfo/source,plugins/ntorrent.torrentlabels/source,plugins/ntorrent.torrenttable.sorter/source,plugins/ntorrent.torrenttrackers/source,plugins/ntorrent.trayicon/source,plugins/redstone.xmlrpc/source
+
+
+sonar.binaries=build/plugins/ntorrent/classes,build/plugins/ntorrent.connection.socket/classes,build/plugins/ntorrent.io.rtorrent/classes,build/plugins/ntorrent.locale/classes,build/plugins/ntorrent.skins/classes,build/plugins/ntorrent.statusbar.throttle/classes,build/plugins/ntorrent.torrentfiles/classes,build/plugins/ntorrent.torrentinfo/classes,build/plugins/ntorrent.torrentlabels/classes,build/plugins/ntorrent.torrenttable.sorter/classes,build/plugins/ntorrent.torrenttrackers/classes,build/plugins/ntorrent.trayicon/classes,build/plugins/redstone.xmlrpc/classes
+
+sonar.libraries=build/lib/*.jar
+
+
+* Sonar analizálási eredmények ellenőrzése, FbContrib plugin install, Quality profile modification:
+	*Sonar web UI: http://localhost:9000/
+	*Login admin/admin
+	*UpdateCenter/Available Plugins/fbcontrib/install
+	*Restart Sonar: ./sonar.sh restart
+	*Check the installed fbcontrib plugin
+	*Settings/Quality Profiles/Sonar way with Findbugs -> COPY -> new name:myprofile
+	*click myprofile/ findbugs-any-inactive ->Bulk change: Activate all
+	*Project tab: add project: ntorrent
+	*Jenkins/ntorrent/BuildNow -> Sonar/ntorrent/új hibák is megjelennek
+
+
+*Jenkins: Chuck Norris plugin install+config
+	*Download
+	*ntorrent/Activate
+
+
+
+
+
+
+
+
